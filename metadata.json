@@ -1,0 +1,5 @@
+{
+  "name": "Lumina Reader",
+  "description": "An elegant reading application for your personal library. Supports Text, Markdown, and PDF placeholders.",
+  "requestFramePermissions": []
+}
