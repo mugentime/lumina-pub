@@ -47,73 +47,158 @@ const extractPdfContent = async (file: File): Promise<Partial<Book>> => {
   const loadingTask = window.pdfjsLib.getDocument({ data: arrayBuffer });
   const pdf = await loadingTask.promise;
 
-  let fullText = "";
   const chapters: Chapter[] = [];
   let currentChapterContent = "";
-  let currentChapterTitle = "Start of Book";
-
-  // Configuration for heuristics
-  const PAGES_PER_CHAPTER = 20; // Fallback: split every 20 pages if no headers found
+  let currentChapterTitle = "Front Matter";
   
+  // Statistics for heuristics
+  let bodyFontSize = 12;
+  const fontSizeCounts = new Map<number, number>();
+
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const page = await pdf.getPage(pageNum);
     const textContent = await page.getTextContent();
+    const viewport = page.getViewport({ scale: 1.0 });
     
-    // Simple heuristic to reconstruct paragraphs from lines
-    let pageText = "";
-    let lastY = -1;
-    
-    // Sort items by vertical position (top to bottom) then horizontal
-    const items = textContent.items.sort((a: any, b: any) => {
-        if (Math.abs(a.transform[5] - b.transform[5]) > 5) {
-            return b.transform[5] - a.transform[5]; // Top to bottom
-        }
-        return a.transform[4] - b.transform[4]; // Left to right
+    const items = textContent.items
+      .filter((item: any) => 'str' in item && item.str.trim().length > 0)
+      .map((item: any) => ({
+        text: item.str,
+        x: item.transform[4],
+        y: item.transform[5],
+        size: Math.abs(item.transform[3]),
+        font: item.fontName || '',
+        width: item.width
+      }));
+
+    if (items.length === 0) continue;
+
+    // Sort items: Top to bottom (descending Y), then Left to right (ascending X)
+    items.sort((a: any, b: any) => {
+      if (Math.abs(a.y - b.y) > 3) return b.y - a.y;
+      return a.x - b.x;
     });
 
-    for (const item of items) {
-       const text = item.str;
-       if (!text.trim()) continue;
+    // Group into lines
+    const lines: any[][] = [];
+    let currentLine: any[] = [];
+    let lastY = items[0].y;
 
-       // Check for vertical gap implying new paragraph
-       if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > 12) {
-           pageText += "\n"; 
-       } else if (pageText.length > 0 && !pageText.endsWith(" ") && !pageText.endsWith("\n")) {
-           pageText += " ";
-       }
-       
-       pageText += text;
-       lastY = item.transform[5];
+    for (const item of items) {
+      if (Math.abs(item.y - lastY) > 3) {
+        lines.push(currentLine);
+        currentLine = [];
+        lastY = item.y;
+      }
+      currentLine.push(item);
+    }
+    if (currentLine.length > 0) lines.push(currentLine);
+
+    // Update font size statistics to identify body text size
+    for (const line of lines) {
+      const size = Math.round(line[0].size);
+      fontSizeCounts.set(size, (fontSizeCounts.get(size) || 0) + 1);
     }
 
-    // Wrap page text in paragraphs
-    const paragraphs = pageText.split('\n').filter(p => p.trim().length > 0);
-    const htmlContent = paragraphs.map(p => `<p>${p}</p>`).join('');
-    
-    currentChapterContent += htmlContent;
+    // Recalculate body font size (mode)
+    let maxCount = 0;
+    fontSizeCounts.forEach((count, size) => {
+      if (count > maxCount) {
+        maxCount = count;
+        bodyFontSize = size;
+      }
+    });
 
-    // Split logic: Arbitrary chunking to prevent massive DOM nodes
-    // In a real reader, we might look for "Chapter" regex in the text
-    if (pageNum % PAGES_PER_CHAPTER === 0 || pageNum === pdf.numPages) {
-        chapters.push({
-            title: currentChapterTitle + (chapters.length > 0 ? ` (Part ${chapters.length + 1})` : ''),
-            content: currentChapterContent
-        });
-        currentChapterContent = "";
-        currentChapterTitle = `Part ${chapters.length + 1}`;
+    for (let i = 0; i < lines.length; i++) {
+      const lineItems = lines[i];
+      const lineText = lineItems.map((it: any) => it.text).join(' ').trim();
+      const fontSize = lineItems[0].size;
+      const isBold = /bold|black|heavy/i.test(lineItems[0].font);
+      
+      // Skip potential page numbers or headers/footers
+      const isPageNumber = /^\d+$/.test(lineText);
+      const isAtEdge = lineItems[0].y < 40 || lineItems[0].y > (viewport.height - 40);
+      if (isPageNumber && isAtEdge) continue;
+
+      // Chapter Detection Heuristics
+      const isSignificantlyLarger = fontSize > bodyFontSize * 1.25;
+      const isChapterKeyword = /^(chapter|section|part|book|prologue|epilogue)\s+(\d+|[ivxlcdm]+)/i.test(lineText);
+      const isStandaloneHeader = (isSignificantlyLarger || (isBold && fontSize >= bodyFontSize)) && lineText.length < 80;
+
+      if (isChapterKeyword || isStandaloneHeader) {
+        // If we have enough content in the current chapter, or it's the very first one
+        if (currentChapterContent.trim().length > 300 || (chapters.length === 0 && currentChapterContent.trim().length > 0)) {
+          chapters.push({
+            title: currentChapterTitle,
+            content: currentChapterContent.endsWith('</p>') ? currentChapterContent : currentChapterContent + '</p>'
+          });
+          currentChapterContent = "";
+          currentChapterTitle = lineText;
+          continue;
+        } else if (chapters.length === 0 && currentChapterContent.trim().length === 0) {
+            // First header found
+            currentChapterTitle = lineText;
+            continue;
+        }
+      }
+
+      // Paragraph Detection
+      let isNewParagraph = false;
+      if (i > 0) {
+        const prevLineY = lines[i-1][0].y;
+        const gap = Math.abs(lineItems[0].y - prevLineY);
+        // If gap is more than 1.5x the font size, it's likely a new paragraph
+        if (gap > fontSize * 1.5) {
+          isNewParagraph = true;
+        }
+      } else {
+        isNewParagraph = true; // Start of page
+      }
+
+      if (isNewParagraph) {
+        if (currentChapterContent.length > 0 && !currentChapterContent.endsWith('</p>')) {
+          currentChapterContent += '</p>';
+        }
+        currentChapterContent += `<p>${lineText}`;
+      } else {
+        // Handle hyphenation at end of line
+        if (currentChapterContent.endsWith('-')) {
+          currentChapterContent = currentChapterContent.slice(0, -1) + lineText;
+        } else {
+          currentChapterContent += ' ' + lineText;
+        }
+      }
+    }
+    
+    // Safety split for extremely long chapters without headers
+    if (currentChapterContent.length > 150000) {
+       chapters.push({
+         title: currentChapterTitle,
+         content: currentChapterContent.endsWith('</p>') ? currentChapterContent : currentChapterContent + '</p>'
+       });
+       currentChapterContent = "";
+       currentChapterTitle = `${currentChapterTitle} (cont.)`;
     }
   }
 
-  // If the PDF is small (fewer than PAGES_PER_CHAPTER), push what we have
-  if (chapters.length === 0 && currentChapterContent.length > 0) {
+  // Final chapter push
+  if (currentChapterContent.trim().length > 0) {
+    chapters.push({
+      title: currentChapterTitle,
+      content: currentChapterContent.endsWith('</p>') ? currentChapterContent : currentChapterContent + '</p>'
+    });
+  }
+
+  // Fallback if nothing was extracted
+  if (chapters.length === 0) {
       chapters.push({
           title: "Full Text",
-          content: currentChapterContent
+          content: "<p>No readable content could be extracted from this PDF.</p>"
       });
   }
 
   return {
-    title: file.name.replace('.pdf', ''),
+    title: file.name.replace(/\.pdf$/i, ''),
     author: 'Imported PDF',
     chapters: chapters
   };

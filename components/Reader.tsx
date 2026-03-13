@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Book, Bookmark } from '../types';
-import { ArrowLeft, Settings, ChevronLeft, ChevronRight, Menu, CheckCircle, Circle, Bookmark as BookmarkIcon, List, Trash2 } from 'lucide-react';
+import { ArrowLeft, Settings, ChevronLeft, ChevronRight, Menu, CheckCircle, Circle, Bookmark as BookmarkIcon, List, Trash2, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface ReaderProps {
   book: Book;
@@ -19,6 +20,9 @@ export const Reader: React.FC<ReaderProps> = ({ book, onBack, onUpdateProgress, 
   const [showControls, setShowControls] = useState(true);
   const [showSidebar, setShowSidebar] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'toc' | 'bookmarks'>('toc');
+  
+  const [isBookmarkModalOpen, setIsBookmarkModalOpen] = useState(false);
+  const [pendingBookmarkLabel, setPendingBookmarkLabel] = useState('');
   
   // Used to handle programmatic scrolling after state updates
   const [targetScroll, setTargetScroll] = useState<number | null>(null);
@@ -87,20 +91,25 @@ export const Reader: React.FC<ReaderProps> = ({ book, onBack, onUpdateProgress, 
   };
 
   const handleAddBookmark = () => {
+      const defaultLabel = `${currentChapter.title} - ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+      setPendingBookmarkLabel(defaultLabel);
+      setIsBookmarkModalOpen(true);
+  };
+
+  const confirmAddBookmark = () => {
       const newBookmark: Bookmark = {
           id: crypto.randomUUID(),
           chapterIndex: currentChapterIndex,
           scrollPosition: window.scrollY,
-          label: `${currentChapter.title} - ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`,
+          label: pendingBookmarkLabel.trim() || `${currentChapter.title} - ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`,
           createdAt: Date.now()
       };
       
       const updatedBookmarks = [newBookmark, ...bookmarks];
       setBookmarks(updatedBookmarks);
       onUpdateBookmarks(updatedBookmarks);
-      
-      // Brief feedback could go here
-      alert("Bookmark added!");
+      setIsBookmarkModalOpen(false);
+      setPendingBookmarkLabel('');
   };
 
   const handleRemoveBookmark = (id: string) => {
@@ -201,91 +210,178 @@ export const Reader: React.FC<ReaderProps> = ({ book, onBack, onUpdateProgress, 
                 onClick={e => e.stopPropagation()}
             >
                 {/* Sidebar Header/Tabs */}
-                <div className="flex border-b border-gray-200/20">
+                <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200/10">
+                    <h2 className="text-xs font-sans font-bold uppercase tracking-widest opacity-50">Navigation</h2>
+                    <button onClick={() => setShowSidebar(false)} className="p-2 hover:bg-gray-500/10 rounded-full transition-colors">
+                        <X size={16} />
+                    </button>
+                </div>
+                <div className="flex border-b border-gray-200/20 relative">
                     <button 
                         onClick={() => setSidebarTab('toc')}
-                        className={`flex-1 py-4 text-sm font-sans font-medium transition-colors ${sidebarTab === 'toc' ? 'text-indigo-500 border-b-2 border-indigo-500' : 'text-gray-500'}`}
+                        className={`flex-1 py-4 flex items-center justify-center gap-2 text-sm font-sans font-medium transition-all relative ${
+                            sidebarTab === 'toc' ? 'text-indigo-500' : 'text-gray-500 hover:text-gray-400'
+                        }`}
                     >
+                        <List size={16} />
                         Chapters
+                        {sidebarTab === 'toc' && (
+                            <motion.div 
+                                layoutId="activeSidebarTab" 
+                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500" 
+                            />
+                        )}
                     </button>
                     <button 
                         onClick={() => setSidebarTab('bookmarks')}
-                        className={`flex-1 py-4 text-sm font-sans font-medium transition-colors ${sidebarTab === 'bookmarks' ? 'text-indigo-500 border-b-2 border-indigo-500' : 'text-gray-500'}`}
+                        className={`flex-1 py-4 flex items-center justify-center gap-2 text-sm font-sans font-medium transition-all relative ${
+                            sidebarTab === 'bookmarks' ? 'text-indigo-500' : 'text-gray-500 hover:text-gray-400'
+                        }`}
                     >
+                        <BookmarkIcon size={16} />
                         Bookmarks
+                        {sidebarTab === 'bookmarks' && (
+                            <motion.div 
+                                layoutId="activeSidebarTab" 
+                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500" 
+                            />
+                        )}
                     </button>
                 </div>
 
                 {/* Sidebar Content */}
-                <div className="flex-1 overflow-y-auto p-6">
-                    {sidebarTab === 'toc' ? (
-                        <ul className="space-y-4">
-                            {book.chapters.map((chap, idx) => {
-                                const isRead = completedChapters.includes(idx);
-                                return (
-                                    <li key={idx} className="flex items-start gap-3">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (isRead) {
-                                                    const newCompleted = completedChapters.filter(c => c !== idx);
-                                                    setCompletedChapters(newCompleted);
-                                                    onUpdateProgress({ ...book.progress, completedChapters: newCompleted });
-                                                } else {
-                                                    markChapterAsRead(idx);
-                                                }
-                                            }}
-                                            className={`mt-1 flex-shrink-0 hover:opacity-80 transition-opacity ${isRead ? 'text-green-500' : 'text-gray-300'}`}
-                                        >
-                                            {isRead ? <CheckCircle size={16} /> : <Circle size={16} />}
-                                        </button>
-                                        <button 
-                                            onClick={() => {
-                                                setCurrentChapterIndex(idx);
-                                                setShowSidebar(false);
-                                                window.scrollTo(0,0);
-                                            }}
-                                            className={`text-left w-full hover:text-indigo-500 transition-colors ${currentChapterIndex === idx ? 'text-indigo-500 font-bold' : ''}`}
-                                        >
-                                            {chap.title}
-                                        </button>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    ) : (
-                        <div className="space-y-4">
-                            {bookmarks.length === 0 ? (
-                                <div className="text-center text-gray-500 py-10">
-                                    <BookmarkIcon className="mx-auto mb-3 opacity-30" size={32} />
-                                    <p>No bookmarks yet.</p>
-                                    <p className="text-xs mt-1">Tap the bookmark icon in the top right to save your spot.</p>
-                                </div>
-                            ) : (
+                <div className="flex-1 overflow-y-auto">
+                    <AnimatePresence mode="wait">
+                        {sidebarTab === 'toc' ? (
+                            <motion.div 
+                                key="toc"
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 10 }}
+                                transition={{ duration: 0.2 }}
+                                className="p-6"
+                            >
                                 <ul className="space-y-4">
-                                    {bookmarks.map((bm) => (
-                                        <li key={bm.id} className="group flex items-start justify-between gap-2 p-3 rounded-lg hover:bg-gray-100/10 border border-transparent hover:border-gray-200/20">
-                                            <button 
-                                                onClick={() => handleJumpToBookmark(bm)}
-                                                className="text-left flex-1"
-                                            >
-                                                <div className="text-sm font-bold font-serif mb-1">{bm.label}</div>
-                                                <div className="text-xs text-gray-400">
-                                                    {new Date(bm.createdAt).toLocaleDateString()}
-                                                </div>
-                                            </button>
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); handleRemoveBookmark(bm.id); }}
-                                                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </li>
-                                    ))}
+                                    {book.chapters.map((chap, idx) => {
+                                        const isRead = completedChapters.includes(idx);
+                                        return (
+                                            <li key={idx} className="flex items-start gap-3">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (isRead) {
+                                                            const newCompleted = completedChapters.filter(c => c !== idx);
+                                                            setCompletedChapters(newCompleted);
+                                                            onUpdateProgress({ ...book.progress, completedChapters: newCompleted });
+                                                        } else {
+                                                            markChapterAsRead(idx);
+                                                        }
+                                                    }}
+                                                    className={`mt-1 flex-shrink-0 hover:opacity-80 transition-opacity ${isRead ? 'text-green-500' : 'text-gray-300'}`}
+                                                >
+                                                    {isRead ? <CheckCircle size={16} /> : <Circle size={16} />}
+                                                </button>
+                                                <button 
+                                                    onClick={() => {
+                                                        setCurrentChapterIndex(idx);
+                                                        setShowSidebar(false);
+                                                        window.scrollTo(0,0);
+                                                    }}
+                                                    className={`text-left w-full hover:text-indigo-500 transition-colors ${currentChapterIndex === idx ? 'text-indigo-500 font-bold' : ''}`}
+                                                >
+                                                    {chap.title}
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
                                 </ul>
-                            )}
-                        </div>
-                    )}
+                            </motion.div>
+                        ) : (
+                            <motion.div 
+                                key="bookmarks"
+                                initial={{ opacity: 0, x: 10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="p-6"
+                            >
+                                <div className="space-y-4">
+                                    {bookmarks.length === 0 ? (
+                                        <div className="text-center text-gray-500 py-10">
+                                            <BookmarkIcon className="mx-auto mb-3 opacity-30" size={32} />
+                                            <p>No bookmarks yet.</p>
+                                            <p className="text-xs mt-1">Tap the bookmark icon in the top right to save your spot.</p>
+                                        </div>
+                                    ) : (
+                                        <ul className="space-y-4">
+                                            {bookmarks.map((bm) => (
+                                                <li key={bm.id} className="group flex items-start justify-between gap-2 p-3 rounded-lg hover:bg-gray-100/10 border border-transparent hover:border-gray-200/20">
+                                                    <button 
+                                                        onClick={() => handleJumpToBookmark(bm)}
+                                                        className="text-left flex-1"
+                                                    >
+                                                        <div className="text-sm font-bold font-serif mb-1">{bm.label}</div>
+                                                        <div className="text-xs text-gray-400">
+                                                            {new Date(bm.createdAt).toLocaleDateString()}
+                                                        </div>
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); handleRemoveBookmark(bm.id); }}
+                                                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* Bookmark Label Modal */}
+      {isBookmarkModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div 
+                className={`${theme === 'dark' ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'} border w-full max-w-md rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in duration-200`}
+                onClick={e => e.stopPropagation()}
+            >
+                <h3 className="text-xl font-sans font-bold mb-4">Add Bookmark</h3>
+                <p className="text-sm opacity-60 mb-4 font-sans">Enter a label for this bookmark to help you find it later.</p>
+                
+                <input 
+                    autoFocus
+                    type="text"
+                    value={pendingBookmarkLabel}
+                    onChange={(e) => setPendingBookmarkLabel(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') confirmAddBookmark();
+                        if (e.key === 'Escape') setIsBookmarkModalOpen(false);
+                    }}
+                    placeholder="Bookmark label..."
+                    className={`w-full p-3 rounded-xl border mb-6 font-sans outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
+                        theme === 'dark' ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                    }`}
+                />
+                
+                <div className="flex gap-3 justify-end font-sans">
+                    <button 
+                        onClick={() => setIsBookmarkModalOpen(false)}
+                        className={`px-4 py-2 rounded-lg hover:bg-gray-500/10 transition-colors ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={confirmAddBookmark}
+                        className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-medium transition-colors shadow-lg shadow-indigo-500/20"
+                    >
+                        Save Bookmark
+                    </button>
                 </div>
             </div>
         </div>
