@@ -9,8 +9,10 @@ Feel free to add your name `[YourName]` next to your ideas so we know who to tag
 ## 📖 1. The Core Vision: What is Lumina Pub?
 *Is this a local-only offline reader? A cloud-synced personal library? A smart-reader built around AI?*
 
++++ Local...? 
+
 * **Idea:** A purely local, privacy-first web reader where your PDFs and EPUBs never leave your browser, but we use an API key just for the "smart" features. `[kiddhex]`
-* **Idea:** ...
+* **Idea:** ... si pues cuál sería la mejor forma de usar un servidor local?
 
 ## 📚 2. The Reading Experience (PDF & EPUB)
 *Handling heavy documents in the browser is tricky. How do we make the reading experience buttery smooth?*
@@ -21,13 +23,14 @@ Feel free to add your name `[YourName]` next to your ideas so we know who to tag
 * **UI/UX:**
     * Dark mode is a must. What about custom fonts, adjustable spacing, and a distraction-free mode?
     * Should we build a dynamic grid/gallery for the library view? 
-* **Idea:** ...
+* **Idea:** ... si, creo que hacer un front muy original y dinámico, que contraste con los readers que existen, estaría chido.
 
 ## 🤖 3. The AI Angle (Gemini Integration)
-*Since the repo started from the AI Studio template, how do we best use the Gemini API without making it feel like a cheap gimmick?*
+*Since the repo started from the AI Studio template, how do we best use the Gemini API without making it feel like a cheap gimmick?* se supone que no tiene interacción con gemini.
 
-* **Contextual Chat:** A sidebar where you can "talk" to the specific book you are reading. (e.g., "Summarize this chapter," or "Explain this concept like I'm 5").
-* **Auto-Tagging:** Automatically generating tags, genres, and summaries when a new book is imported.
+* **Contextual Chat:** A sidebar where you can "talk" to the specific book you are reading. (e.g., "Summarize this chapter," or "Explain this concept like I'm 5"). eso está chingon. un compañero de lectura
+
+* **Auto-Tagging:** Automatically generating tags, genres, and summaries when a new book is imported. si
 * **Translation:** Highlighting a difficult paragraph and having Gemini translate or simplify it inline.
 * **Idea:** ...
 
@@ -44,7 +47,7 @@ Feel free to add your name `[YourName]` next to your ideas so we know who to tag
 
 * **Idea:** Syncing reading progress across devices via a lightweight peer-to-peer connection (WebRTC) so we don't need a database.
 * **Idea:** Text-to-speech using browser APIs for an "audiobook" mode.
-* **Idea:** ...
+* **Idea:** ...muy valioso tener un modo de audiolibro. 
 
 ---
 **How to contribute:** Just make a PR to this file or edit it directly if you have access. If an idea sparks a serious technical requirement, we'll move it over to the official `TODO.md` or GitHub Issues.
