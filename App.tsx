@@ -38,50 +38,58 @@ function App() {
     if (activeBook) {
       storageService.updateProgress(activeBook.id, progress);
       // Update local state without full reload
-      setActiveBook(prev => prev ? ({
-          ...prev, 
-          progress
-      }) : null);
+      setActiveBook((prev) =>
+        prev
+          ? {
+              ...prev,
+              progress,
+            }
+          : null
+      );
     }
   };
 
   const handleUpdateBookmarks = (bookmarks: Bookmark[]) => {
     if (activeBook) {
-        storageService.updateBookmarks(activeBook.id, bookmarks);
-        // Update local state
-        setActiveBook(prev => prev ? ({
-            ...prev,
-            bookmarks
-        }) : null);
+      storageService.updateBookmarks(activeBook.id, bookmarks);
+      // Update local state
+      setActiveBook((prev) =>
+        prev
+          ? {
+              ...prev,
+              bookmarks,
+            }
+          : null
+      );
     }
   };
 
   return (
     <div className="antialiased text-gray-900 bg-gray-50 min-h-screen">
       {view === ViewMode.LIBRARY && (
-        <Library 
-          books={library} 
-          onSelectBook={handleSelectBook} 
+        <Library
+          books={library}
+          onSelectBook={handleSelectBook}
           onDeleteBook={handleDeleteBook}
           onNavigateImport={() => setView(ViewMode.IMPORTER)}
         />
       )}
 
       {view === ViewMode.IMPORTER && (
-        <Importer 
+        <Importer
           onConversionComplete={handleImportComplete}
           onCancel={() => setView(ViewMode.LIBRARY)}
         />
       )}
 
       {view === ViewMode.READER && activeBook && (
-        <Reader 
-          book={activeBook} 
+        <Reader
+          book={activeBook}
           onBack={() => {
-              // Refresh library in case progress changed
-              setLibrary(storageService.getLibrary());
-              setView(ViewMode.LIBRARY);
-              setActiveBook(null);
+            // Refresh library in case progress changed
+            setLibrary(storageService.getLibrary());
+            setView(ViewMode.LIBRARY);
+            setActiveBook(null);
           }}
           onUpdateProgress={handleUpdateProgress}
           onUpdateBookmarks={handleUpdateBookmarks}

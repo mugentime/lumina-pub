@@ -11,11 +11,15 @@ export const processFileToBook = async (file: File): Promise<Partial<Book>> => {
   const fileType = file.type;
 
   // Handle Text and Markdown files
-  if (fileType === 'text/plain' || fileName.endsWith('.md') || fileName.endsWith('.txt')) {
+  if (
+    fileType === 'text/plain' ||
+    fileName.endsWith('.md') ||
+    fileName.endsWith('.txt')
+  ) {
     const text = await file.text();
     const formattedContent = text
       .split('\n\n')
-      .map(para => `<p>${para.trim()}</p>`)
+      .map((para) => `<p>${para.trim()}</p>`)
       .join('');
 
     return {
@@ -24,9 +28,9 @@ export const processFileToBook = async (file: File): Promise<Partial<Book>> => {
       chapters: [
         {
           title: 'Document Content',
-          content: formattedContent || '<p><em>Empty file</em></p>'
-        }
-      ]
+          content: formattedContent || '<p><em>Empty file</em></p>',
+        },
+      ],
     };
   }
 
@@ -35,12 +39,14 @@ export const processFileToBook = async (file: File): Promise<Partial<Book>> => {
     return await extractPdfContent(file);
   }
 
-  throw new Error("Unsupported file type");
+  throw new Error('Unsupported file type');
 };
 
 const extractPdfContent = async (file: File): Promise<Partial<Book>> => {
   if (!window.pdfjsLib) {
-    throw new Error("PDF parser library not loaded. Please check your internet connection.");
+    throw new Error(
+      'PDF parser library not loaded. Please check your internet connection.'
+    );
   }
 
   const arrayBuffer = await file.arrayBuffer();
@@ -48,9 +54,9 @@ const extractPdfContent = async (file: File): Promise<Partial<Book>> => {
   const pdf = await loadingTask.promise;
 
   const chapters: Chapter[] = [];
-  let currentChapterContent = "";
-  let currentChapterTitle = "Front Matter";
-  
+  let currentChapterContent = '';
+  let currentChapterTitle = 'Front Matter';
+
   // Statistics for heuristics
   let bodyFontSize = 12;
   const fontSizeCounts = new Map<number, number>();
@@ -59,7 +65,7 @@ const extractPdfContent = async (file: File): Promise<Partial<Book>> => {
     const page = await pdf.getPage(pageNum);
     const textContent = await page.getTextContent();
     const viewport = page.getViewport({ scale: 1.0 });
-    
+
     const items = textContent.items
       .filter((item: any) => 'str' in item && item.str.trim().length > 0)
       .map((item: any) => ({
@@ -68,7 +74,7 @@ const extractPdfContent = async (file: File): Promise<Partial<Book>> => {
         y: item.transform[5],
         size: Math.abs(item.transform[3]),
         font: item.fontName || '',
-        width: item.width
+        width: item.width,
       }));
 
     if (items.length === 0) continue;
@@ -111,41 +117,58 @@ const extractPdfContent = async (file: File): Promise<Partial<Book>> => {
 
     for (let i = 0; i < lines.length; i++) {
       const lineItems = lines[i];
-      const lineText = lineItems.map((it: any) => it.text).join(' ').trim();
+      const lineText = lineItems
+        .map((it: any) => it.text)
+        .join(' ')
+        .trim();
       const fontSize = lineItems[0].size;
       const isBold = /bold|black|heavy/i.test(lineItems[0].font);
-      
+
       // Skip potential page numbers or headers/footers
       const isPageNumber = /^\d+$/.test(lineText);
-      const isAtEdge = lineItems[0].y < 40 || lineItems[0].y > (viewport.height - 40);
+      const isAtEdge =
+        lineItems[0].y < 40 || lineItems[0].y > viewport.height - 40;
       if (isPageNumber && isAtEdge) continue;
 
       // Chapter Detection Heuristics
       const isSignificantlyLarger = fontSize > bodyFontSize * 1.25;
-      const isChapterKeyword = /^(chapter|section|part|book|prologue|epilogue)\s+(\d+|[ivxlcdm]+)/i.test(lineText);
-      const isStandaloneHeader = (isSignificantlyLarger || (isBold && fontSize >= bodyFontSize)) && lineText.length < 80;
+      const isChapterKeyword =
+        /^(chapter|section|part|book|prologue|epilogue)\s+(\d+|[ivxlcdm]+)/i.test(
+          lineText
+        );
+      const isStandaloneHeader =
+        (isSignificantlyLarger || (isBold && fontSize >= bodyFontSize)) &&
+        lineText.length < 80;
 
       if (isChapterKeyword || isStandaloneHeader) {
         // If we have enough content in the current chapter, or it's the very first one
-        if (currentChapterContent.trim().length > 300 || (chapters.length === 0 && currentChapterContent.trim().length > 0)) {
+        if (
+          currentChapterContent.trim().length > 300 ||
+          (chapters.length === 0 && currentChapterContent.trim().length > 0)
+        ) {
           chapters.push({
             title: currentChapterTitle,
-            content: currentChapterContent.endsWith('</p>') ? currentChapterContent : currentChapterContent + '</p>'
+            content: currentChapterContent.endsWith('</p>')
+              ? currentChapterContent
+              : currentChapterContent + '</p>',
           });
-          currentChapterContent = "";
+          currentChapterContent = '';
           currentChapterTitle = lineText;
           continue;
-        } else if (chapters.length === 0 && currentChapterContent.trim().length === 0) {
-            // First header found
-            currentChapterTitle = lineText;
-            continue;
+        } else if (
+          chapters.length === 0 &&
+          currentChapterContent.trim().length === 0
+        ) {
+          // First header found
+          currentChapterTitle = lineText;
+          continue;
         }
       }
 
       // Paragraph Detection
       let isNewParagraph = false;
       if (i > 0) {
-        const prevLineY = lines[i-1][0].y;
+        const prevLineY = lines[i - 1][0].y;
         const gap = Math.abs(lineItems[0].y - prevLineY);
         // If gap is more than 1.5x the font size, it's likely a new paragraph
         if (gap > fontSize * 1.5) {
@@ -156,7 +179,10 @@ const extractPdfContent = async (file: File): Promise<Partial<Book>> => {
       }
 
       if (isNewParagraph) {
-        if (currentChapterContent.length > 0 && !currentChapterContent.endsWith('</p>')) {
+        if (
+          currentChapterContent.length > 0 &&
+          !currentChapterContent.endsWith('</p>')
+        ) {
           currentChapterContent += '</p>';
         }
         currentChapterContent += `<p>${lineText}`;
@@ -169,15 +195,17 @@ const extractPdfContent = async (file: File): Promise<Partial<Book>> => {
         }
       }
     }
-    
+
     // Safety split for extremely long chapters without headers
     if (currentChapterContent.length > 150000) {
-       chapters.push({
-         title: currentChapterTitle,
-         content: currentChapterContent.endsWith('</p>') ? currentChapterContent : currentChapterContent + '</p>'
-       });
-       currentChapterContent = "";
-       currentChapterTitle = `${currentChapterTitle} (cont.)`;
+      chapters.push({
+        title: currentChapterTitle,
+        content: currentChapterContent.endsWith('</p>')
+          ? currentChapterContent
+          : currentChapterContent + '</p>',
+      });
+      currentChapterContent = '';
+      currentChapterTitle = `${currentChapterTitle} (cont.)`;
     }
   }
 
@@ -185,21 +213,23 @@ const extractPdfContent = async (file: File): Promise<Partial<Book>> => {
   if (currentChapterContent.trim().length > 0) {
     chapters.push({
       title: currentChapterTitle,
-      content: currentChapterContent.endsWith('</p>') ? currentChapterContent : currentChapterContent + '</p>'
+      content: currentChapterContent.endsWith('</p>')
+        ? currentChapterContent
+        : currentChapterContent + '</p>',
     });
   }
 
   // Fallback if nothing was extracted
   if (chapters.length === 0) {
-      chapters.push({
-          title: "Full Text",
-          content: "<p>No readable content could be extracted from this PDF.</p>"
-      });
+    chapters.push({
+      title: 'Full Text',
+      content: '<p>No readable content could be extracted from this PDF.</p>',
+    });
   }
 
   return {
     title: file.name.replace(/\.pdf$/i, ''),
     author: 'Imported PDF',
-    chapters: chapters
+    chapters: chapters,
   };
 };

@@ -17,11 +17,11 @@ export const storageService = {
           chapterIndex: 0,
           scrollPosition: 0,
           ...b.progress, // overwrite defaults
-          completedChapters: b.progress?.completedChapters || []
-        }
+          completedChapters: b.progress?.completedChapters || [],
+        },
       }));
     } catch (e) {
-      console.error("Failed to load library", e);
+      console.error('Failed to load library', e);
       return [];
     }
   },
@@ -29,7 +29,7 @@ export const storageService = {
   saveBook: (book: Book): void => {
     const library = storageService.getLibrary();
     // Check if book exists, update if so
-    const existingIndex = library.findIndex(b => b.id === book.id);
+    const existingIndex = library.findIndex((b) => b.id === book.id);
     if (existingIndex >= 0) {
       library[existingIndex] = book;
     } else {
@@ -40,18 +40,18 @@ export const storageService = {
 
   deleteBook: (bookId: string): void => {
     const library = storageService.getLibrary();
-    const newLibrary = library.filter(b => b.id !== bookId);
+    const newLibrary = library.filter((b) => b.id !== bookId);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newLibrary));
   },
 
   getBook: (bookId: string): Book | undefined => {
     const library = storageService.getLibrary();
-    return library.find(b => b.id === bookId);
+    return library.find((b) => b.id === bookId);
   },
-  
+
   updateProgress: (bookId: string, progress: Book['progress']) => {
     const library = storageService.getLibrary();
-    const bookIndex = library.findIndex(b => b.id === bookId);
+    const bookIndex = library.findIndex((b) => b.id === bookId);
     if (bookIndex >= 0) {
       library[bookIndex].progress = progress;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(library));
@@ -60,10 +60,10 @@ export const storageService = {
 
   updateBookmarks: (bookId: string, bookmarks: Bookmark[]) => {
     const library = storageService.getLibrary();
-    const bookIndex = library.findIndex(b => b.id === bookId);
+    const bookIndex = library.findIndex((b) => b.id === bookId);
     if (bookIndex >= 0) {
       library[bookIndex].bookmarks = bookmarks;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(library));
     }
-  }
+  },
 };

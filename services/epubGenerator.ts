@@ -17,12 +17,15 @@ export const generateEpub = async (book: Book): Promise<Blob> => {
   zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
 
   // 2. META-INF/container.xml
-  zip.folder('META-INF').file('container.xml', `<?xml version="1.0"?>
+  zip.folder('META-INF').file(
+    'container.xml',
+    `<?xml version="1.0"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
    <rootfiles>
       <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
    </rootfiles>
-</container>`);
+</container>`
+  );
 
   // 3. OEBPS folder structure
   const oebps = zip.folder('OEBPS');
@@ -39,7 +42,7 @@ export const generateEpub = async (book: Book): Promise<Blob> => {
   book.chapters.forEach((chapter, index) => {
     const fileName = `chapter_${index + 1}.xhtml`;
     const fileId = `chap${index + 1}`;
-    
+
     // Minimal valid XHTML for EPUB
     const xhtml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
