@@ -33,14 +33,9 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDeleteB
   return (
     <div className="p-8 max-w-7xl mx-auto min-h-screen">
       <div className="flex justify-between items-center mb-12">
-        <div className="flex items-center gap-3">
-          <div className="bg-gray-900 p-2 rounded-xl">
-            <BookOpen size={24} className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-serif font-bold text-gray-900 mb-1">Lumina Pub</h1>
-            <p className="text-gray-500">Your personal digital library</p>
-          </div>
+        <div>
+          <h1 className="text-4xl font-serif font-bold text-gray-900 mb-2">My Library</h1>
+          <p className="text-gray-500">Your collection of converted books</p>
         </div>
         <button
           onClick={onNavigateImport}

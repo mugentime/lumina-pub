@@ -1,53 +1,44 @@
-# Lumina Pub
+# 📚 Lumina Pub
 
-Lumina Pub is an elegant reading application designed for a seamless personal library experience. It supports Text, Markdown, and PDF documents with advanced parsing heuristics to reconstruct chapters and paragraphs from raw content.
+Lumina Pub is a modern, local-first personal library and reader for PDFs and EPUBs. Built with privacy in mind, it allows you to manage and read your documents directly in the browser while optionally leveraging the Google Gemini API for smart, contextual reading features.
 
-## Features
+## ✨ Features (Current & Planned)
+* **Local Parsing:** Read PDFs and EPUBs natively in the browser without uploading your personal files to a server.
+* **Smart Reading:** Select text to summarize, translate, or explain concepts using the Gemini API.
+* **Modern UI:** A clean, distraction-free interface built with React.
 
-- **Advanced PDF Parsing**: Heuristics-based extraction that detects chapter titles, font sizes, and paragraph structures.
-- **Elegant Reader UI**: Customizable reading experience with multiple themes (Light, Sepia, Dark) and font size controls.
-- **Library Management**: Import and manage your personal collection of documents locally.
-- **Bookmarks & Progress**: Save your spot with custom-labeled bookmarks and track your reading progress across chapters.
-- **Responsive Design**: Optimized for both desktop and mobile reading.
+## 🛠️ Tech Stack
+* **Frontend:** React, TypeScript, Vite
+* **AI Integration:** Google Gemini API (`@google/genai`)
+* **Document Parsing:** (Evaluating `pdfjs-dist` and `epub.js`)
 
-## Tech Stack
+## 🚀 Getting Started
 
-- **Frontend**: React 19, TypeScript
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **Animations**: Motion (Framer Motion)
-- **PDF Parsing**: PDF.js
-- **EPUB Generation**: JSZip (for future exports)
-- **Build Tool**: Vite
-
-## Setup Instructions
+Follow these steps to run Lumina Pub locally on your machine.
 
 ### Prerequisites
-
-- Node.js (v18 or higher)
-- npm or yarn
+* Node.js (v18 or higher recommended)
+* A valid Google Gemini API Key
 
 ### Installation
 
-1. Clone the repository or download the source code.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-4. Open your browser and navigate to `http://localhost:3000`.
+1. **Clone the repository:**
+    git clone https://github.com/mugentime/lumina-pub.git
+    cd lumina-pub
 
-### Building for Production
+2. **Install dependencies:**
+    npm install
 
-To create a production-ready build:
-```bash
-npm run build
-```
-The output will be in the `dist/` directory.
+3. **Set up your environment variables:**
+    Create a `.env.local` file in the root directory and add your Gemini API key:
+    
+    VITE_GEMINI_API_KEY=your_api_key_here
 
-## License
+4. **Start the development server:**
+    npm run dev
+    
+    The app will typically be available at `http://localhost:5173`.
 
-MIT License
+## 🤝 Contributing & Ideas
+
+Lumina Pub is currently in active development. If you are a developer looking to contribute or propose new features, please check out our [Brainstorming Document](BRAINSTORM.md) to see what we are currently discussing, or open an issue!

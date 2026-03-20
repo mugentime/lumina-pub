@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Book, Bookmark } from '../types';
-import { ArrowLeft, Settings, ChevronLeft, ChevronRight, Menu, CheckCircle, Circle, Bookmark as BookmarkIcon, List, Trash2, X, BookOpen } from 'lucide-react';
+import { ArrowLeft, Settings, ChevronLeft, ChevronRight, Menu, CheckCircle, Circle, Bookmark as BookmarkIcon, List, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ReaderProps {
@@ -210,13 +210,8 @@ export const Reader: React.FC<ReaderProps> = ({ book, onBack, onUpdateProgress, 
                 onClick={e => e.stopPropagation()}
             >
                 {/* Sidebar Header/Tabs */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200/10">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-indigo-500 p-1 rounded-md">
-                            <BookOpen size={12} className="text-white" />
-                        </div>
-                        <span className="text-xs font-serif font-bold uppercase tracking-widest">Lumina Pub</span>
-                    </div>
+                <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200/10">
+                    <h2 className="text-xs font-sans font-bold uppercase tracking-widest opacity-50">Navigation</h2>
                     <button onClick={() => setShowSidebar(false)} className="p-2 hover:bg-gray-500/10 rounded-full transition-colors">
                         <X size={16} />
                     </button>

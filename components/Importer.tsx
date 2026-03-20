@@ -70,12 +70,6 @@ export const Importer: React.FC<ImporterProps> = ({ onConversionComplete, onCanc
         <div className="absolute bottom-[-50px] left-[-50px] w-32 h-32 bg-purple-100 rounded-full blur-3xl opacity-50" />
 
         <div className="relative z-10 text-center">
-            <div className="flex items-center justify-center gap-2 mb-6">
-                <div className="bg-indigo-600 p-1.5 rounded-lg">
-                    <FileText size={18} className="text-white" />
-                </div>
-                <span className="font-serif font-bold text-xl text-gray-900">Lumina Pub</span>
-            </div>
             <h2 className="text-3xl font-serif font-bold text-gray-900 mb-2">Import Book</h2>
             <p className="text-gray-500 mb-8">Convert PDF, Text, or Markdown files to reading format.</p>
 
