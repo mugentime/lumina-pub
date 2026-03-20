@@ -1,0 +1,5 @@
+{
+  "name": "Lumina Pub",
+  "description": "An elegant reading application for your personal library. Supports Text, Markdown, and PDF documents with advanced parsing.",
+  "requestFramePermissions": []
+}
