@@ -4,7 +4,7 @@ Welcome to the Lumina Pub project! This roadmap outlines the current priorities,
 
 ## Phase 1: Onboarding & Project Cleanup (Good First Issues)
 These tasks are ideal for your first contribution and will help clear out legacy boilerplate from the initial setup.
-- [ ] **Remove AI Studio Boilerplate:** Delete the `migrated_prompt_history/` directory.
+- [x] **Remove AI Studio Boilerplate:** Delete the `migrated_prompt_history/` directory.
 - [ ] **Clean Up Configs:** Review and remove/update `metadata.json` if it's tied to the old AI Studio template.
 - [ ] **Update README.md:** Replace the generic AI Studio instructions with the actual project description, tech stack, and setup instructions for Lumina Pub.
 
